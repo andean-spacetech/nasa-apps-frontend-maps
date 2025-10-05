@@ -23,10 +23,10 @@ const CropList = ({ cropData, onCropSelect, selectedCropIndex }) => {
             onClick={() => onCropSelect(index)}
           >
             <div className="crop-name">
-              {crop.crop}
+              {crop.crop_name}
             </div>
-            <div className={`crop-score score-${getScoreClass(crop.overall_suitability_score || 0)}`}>
-              {Math.round((crop.overall_suitability_score || 0) * 100)}%
+            <div className={`crop-score score-${getScoreClass((crop.suitability_score || 0) / 100)}`}>
+              {crop.suitability_score || 0}%
             </div>
           </div>
         ))}

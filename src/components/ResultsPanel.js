@@ -40,14 +40,13 @@ const ResultsPanel = ({ cropData, loading, error, selectedLocation, locationInfo
     );
   }
 
-  // Extract data from the new structure
+  // Extract data from the new structure (simplified format)
   const { 
     analysis_info, 
-    climate_analysis, 
-    climate_adaptation_summary,
-    data_quality,
+    analysis_data_summary,
     top_recommendations,
-    detailed_recommendations 
+    detailed_recommendations,
+    buffer_geojson 
   } = cropData;
 
   return (
@@ -71,110 +70,59 @@ const ResultsPanel = ({ cropData, loading, error, selectedLocation, locationInfo
         {analysis_info && (
           <div className="analysis-info">
             <p><strong>Fecha de Análisis:</strong> {analysis_info.analysis_date}</p>
+            <p><strong>Mes de Análisis:</strong> {analysis_info.analysis_month}</p>
             <p><strong>Cultivos Analizados:</strong> {analysis_info.total_crops_analyzed}</p>
           </div>
         )}
       </div>
 
-      {/* Seasonal Context */}
-      {analysis_info?.seasonal_context && (
-        <div className="seasonal-context">
-          <h3>📅 Contexto Estacional</h3>
-          <div className="season-info">
-            <h4>{analysis_info.seasonal_context.season_es}</h4>
-            <p>{analysis_info.seasonal_context.description}</p>
-            <div className="season-details">
-              <p><strong>Período:</strong> {analysis_info.seasonal_context.months}</p>
-              <p><strong>Riesgo de Heladas:</strong> 
-                <span className={`frost-risk ${analysis_info.seasonal_context.frost_risk}`}>
-                  {analysis_info.seasonal_context.frost_risk}
-                </span>
-              </p>
-            </div>
-            {analysis_info.seasonal_context.recommended_activities && (
-              <div className="recommended-activities">
-                <p><strong>Actividades Recomendadas:</strong></p>
-                <ul>
-                  {analysis_info.seasonal_context.recommended_activities.map((activity, index) => (
-                    <li key={index}>{activity}</li>
-                  ))}
-                </ul>
+      {/* Analysis Data Summary */}
+      {analysis_data_summary && (
+        <div className="analysis-data">
+          <h3>📊 Datos de Análisis (5 años)</h3>
+          <div className="data-grid">
+            {Object.entries(analysis_data_summary).map(([key, data]) => (
+              <div key={key} className="data-item">
+                <h4>{getDataLabel(key)}</h4>
+                <div className="data-values">
+                  <p><strong>Promedio:</strong> {data.mean?.toFixed(2) || 'N/A'}</p>
+                  <p><strong>Rango:</strong> {data.range || 'N/A'}</p>
+                  <p><strong>Calidad:</strong> 
+                    <span className={`quality-badge ${data.quality}`}>{data.quality}</span>
+                  </p>
+                </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
       )}
 
-      {/* Climate Analysis */}
-      {climate_analysis && (
-        <div className="climate-analysis">
-          <h3>🌡️ Análisis Climático</h3>
-          
-          {/* Climate Shifts */}
-          {climate_analysis.climate_shift_detected && (
-            <div className="climate-shift">
-              <h4>⚠️ Cambio Climático Detectado</h4>
-              <p>{climate_analysis.climate_shift_description}</p>
+      {/* Buffer Information */}
+      {buffer_geojson && (
+        <div className="buffer-info">
+          <h3>🗺️ Área de Análisis</h3>
+          <div className="buffer-details">
+            <div className="buffer-item">
+              <span className="label">Radio de Análisis:</span>
+              <span className="value">{buffer_geojson.properties?.radius_km || 'N/A'} km</span>
             </div>
-          )}
-
-          {/* Frost Information */}
-          {climate_analysis.frost_probability !== undefined && (
-            <div className="frost-info">
-              <h4>❄️ Información de Heladas</h4>
-              <p><strong>Probabilidad de Heladas:</strong> {(climate_analysis.frost_probability * 100).toFixed(1)}%</p>
-              {climate_analysis.min_temperature && (
-                <p><strong>Temperatura Mínima:</strong> {climate_analysis.min_temperature.toFixed(1)}°C</p>
-              )}
+            <div className="buffer-item">
+              <span className="label">Centro del Área:</span>
+              <span className="value">
+                {buffer_geojson.properties?.center?.lat?.toFixed(4) || 'N/A'}°, 
+                {buffer_geojson.properties?.center?.lon?.toFixed(4) || 'N/A'}°
+              </span>
             </div>
-          )}
-
-          {/* Recent Conditions */}
-          {climate_analysis.recent_conditions && (
-            <div className="recent-conditions">
-              <h4>📊 Condiciones Recientes</h4>
-              <div className="conditions-grid">
-                {climate_analysis.recent_conditions.temperature_c && (
-                  <div className="condition-item">
-                    <span className="label">Temperatura:</span>
-                    <span className="value">{climate_analysis.recent_conditions.temperature_c.toFixed(1)}°C</span>
-                  </div>
-                )}
-                {climate_analysis.recent_conditions.precipitation_mm && (
-                  <div className="condition-item">
-                    <span className="label">Precipitación:</span>
-                    <span className="value">{climate_analysis.recent_conditions.precipitation_mm.toFixed(1)} mm</span>
-                  </div>
-                )}
-                {climate_analysis.recent_conditions.soil_moisture_pct && (
-                  <div className="condition-item">
-                    <span className="label">Humedad del Suelo:</span>
-                    <span className="value">{(climate_analysis.recent_conditions.soil_moisture_pct * 100).toFixed(1)}%</span>
-                  </div>
-                )}
-                {climate_analysis.recent_conditions.ndvi && (
-                  <div className="condition-item">
-                    <span className="label">NDVI:</span>
-                    <span className="value">{(climate_analysis.recent_conditions.ndvi / 10000).toFixed(3)}</span>
-                  </div>
-                )}
+            <div className="buffer-item">
+              <span className="label">Descripción:</span>
+              <span className="value">{buffer_geojson.properties?.description || 'N/A'}</span>
+            </div>
+            {buffer_geojson.geometry?.coordinates && (
+              <div className="buffer-item">
+                <span className="label">Puntos del Polígono:</span>
+                <span className="value">{buffer_geojson.geometry.coordinates[0]?.length || 'N/A'} puntos</span>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Data Quality */}
-      {data_quality && (
-        <div className="data-quality">
-          <h3>📈 Calidad de Datos</h3>
-          <div className="quality-indicators">
-            {Object.entries(data_quality).map(([key, quality]) => (
-              <div key={key} className={`quality-item ${quality}`}>
-                <span className="label">{getQualityLabel(key)}:</span>
-                <span className="quality-badge">{quality}</span>
-              </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -187,71 +135,58 @@ const ResultsPanel = ({ cropData, loading, error, selectedLocation, locationInfo
             {top_recommendations.map((crop, index) => (
               <div key={index} className="crop-item">
                 <div className="crop-header">
-                  <h4>{crop.crop}</h4>
-                  <span className={`score score-${getScoreClass(crop.overall_suitability_score || 0)}`}>
-                    {Math.round((crop.overall_suitability_score || 0) * 100)}%
+                  <h4>{crop.crop_name}</h4>
+                  <span className={`score score-${getScoreClass(crop.suitability_score / 100)}`}>
+                    {crop.suitability_score.toFixed(1)}%
                   </span>
                 </div>
-                <p className="summary">{crop.recommendation_summary}</p>
                 <div className="crop-details">
-                  <p><strong>Mejor época:</strong> {crop.best_planting_window}</p>
-                  <p><strong>Confianza:</strong> {crop.confidence_level}</p>
-                  {crop.climate_shift_detected && (
-                    <p className="climate-warning">⚠️ Cambio climático detectado</p>
+                  <div className="crop-info-grid">
+                    <div className="info-item">
+                      <span className="label">Período de Crecimiento:</span>
+                      <span className="value">{crop.growth_period_days} días</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="label">Fecha de Siembra:</span>
+                      <span className="value">{crop.planting_date}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="label">Fecha de Cosecha:</span>
+                      <span className="value">{crop.harvest_date}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="label">Nivel de Confianza:</span>
+                      <span className={`confidence ${crop.confidence_level}`}>{crop.confidence_level}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="label">Potencial de Rendimiento:</span>
+                      <span className="value">{crop.yield_potential}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="label">Multiplicador Regional:</span>
+                      <span className="value">{crop.regional_multiplier?.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Analysis Log */}
+                  {crop.analysis_log && crop.analysis_log.length > 0 && (
+                    <div className="analysis-log">
+                      <h5>Análisis Detallado:</h5>
+                      <ul>
+                        {crop.analysis_log.map((log, logIndex) => (
+                          <li key={logIndex}>{log}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
-                
-                {/* Adaptive Factors */}
-                {crop.adaptive_factors && (
-                  <div className="adaptive-factors">
-                    <h5>Factores Adaptativos:</h5>
-                    <div className="factors-grid">
-                      <div className="factor-item">
-                        <span>NDVI:</span>
-                        <span>{crop.adaptive_factors.ndvi_score?.toFixed(2)}</span>
-                      </div>
-                      <div className="factor-item">
-                        <span>Temperatura:</span>
-                        <span>{crop.adaptive_factors.temperature_score?.toFixed(2)}</span>
-                      </div>
-                      <div className="factor-item">
-                        <span>Humedad:</span>
-                        <span>{crop.adaptive_factors.soil_moisture_score?.toFixed(2)}</span>
-                      </div>
-                      <div className="factor-item">
-                        <span>Pendiente:</span>
-                        <span>{crop.adaptive_factors.slope_score?.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Frost Risk Assessment */}
-                {crop.frost_risk_assessment && (
-                  <div className="frost-assessment">
-                    <h5>Evaluación de Riesgo de Heladas:</h5>
-                    <div className="frost-details">
-                      <p><strong>Tolerancia:</strong> {crop.frost_risk_assessment.frost_tolerance}</p>
-                      <p><strong>Impacto:</strong> {(crop.frost_risk_assessment.frost_impact_score * 100).toFixed(1)}%</p>
-                      <p><strong>Riesgo Estacional:</strong> {crop.frost_risk_assessment.seasonal_frost_risk}</p>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
         ) : (
-          <p>No se encontraron recomendaciones para esta ubicación.</p>
+          <p>No hay recomendaciones disponibles</p>
         )}
       </div>
-
-      {/* Climate Adaptation Summary */}
-      {climate_adaptation_summary && (
-        <div className="climate-summary">
-          <h3>🌱 Resumen de Adaptación Climática</h3>
-          <SafeRenderer data={climate_adaptation_summary} fallback="Información climática no disponible" />
-        </div>
-      )}
     </div>
   );
 };
@@ -261,6 +196,16 @@ const getScoreClass = (score) => {
   if (score >= 0.6) return 'good';
   if (score >= 0.4) return 'moderate';
   return 'low';
+};
+
+const getDataLabel = (key) => {
+  const labels = {
+    'ndvi': 'NDVI',
+    'temperature': 'Temperatura',
+    'precipitation': 'Precipitación',
+    'soil_moisture': 'Humedad del Suelo'
+  };
+  return labels[key] || key;
 };
 
 const getQualityLabel = (key) => {

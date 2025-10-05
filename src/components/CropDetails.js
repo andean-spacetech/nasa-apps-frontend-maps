@@ -79,10 +79,10 @@ const CropDetails = ({ cropData, selectedCropIndex, onCropSelect, locationInfo, 
                 onClick={() => onCropSelect && onCropSelect(index)}
               >
                 <div className="crop-name">
-                  {crop.crop}
+                  {crop.crop_name}
                 </div>
-                <div className={`crop-score score-${getScoreClass(crop.overall_suitability_score || 0)}`}>
-                  {Math.round((crop.overall_suitability_score || 0) * 100)}%
+                <div className={`crop-score score-${getScoreClass((crop.suitability_score || 0) / 100)}`}>
+                  {crop.suitability_score || 0}%
                 </div>
               </div>
             ))}
@@ -203,17 +203,24 @@ const CropDetails = ({ cropData, selectedCropIndex, onCropSelect, locationInfo, 
           <h3>🌾 Recomendaciones Principales</h3>
           <div className="selected-crop">
             <div className="crop-header">
-              <h4>{selectedCrop.crop}</h4>
-              <span className={`score score-${getScoreClass(selectedCrop.overall_suitability_score || 0)}`}>
-                {Math.round((selectedCrop.overall_suitability_score || 0) * 100)}%
+              <h4>{selectedCrop.crop_name}</h4>
+              <span className={`score score-${getScoreClass((selectedCrop.suitability_score || 0) / 100)}`}>
+                {selectedCrop.suitability_score || 0}%
               </span>
             </div>
-            <p className="summary">{selectedCrop.recommendation_summary}</p>
             <div className="crop-info">
-              <p><strong>Mejor época:</strong> {selectedCrop.best_planting_window}</p>
-              <p><strong>Confianza:</strong> {selectedCrop.confidence_level}</p>
-              {selectedCrop.climate_shift_detected && (
-                <p className="climate-warning">⚠️ Cambio climático detectado</p>
+              <p><strong>Potencial de Rendimiento:</strong> {selectedCrop.yield_potential}</p>
+              
+              {/* Analysis Log */}
+              {selectedCrop.analysis_log && selectedCrop.analysis_log.length > 0 && (
+                <div className="analysis-log">
+                  <h5>Análisis Detallado:</h5>
+                  <ul>
+                    {selectedCrop.analysis_log.map((log, logIndex) => (
+                      <li key={logIndex}>{log}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
             

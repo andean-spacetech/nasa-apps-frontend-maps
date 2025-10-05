@@ -16,6 +16,7 @@ const MapComponent = ({ onMapClick, selectedLocation, loading, cropData }) => {
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
   const tempCircleRef = useRef(null);
+  const bufferRef = useRef(null);
   const [locationName, setLocationName] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
 
@@ -123,6 +124,48 @@ const MapComponent = ({ onMapClick, selectedLocation, loading, cropData }) => {
     setLocationName(null);
     setLoadingLocation(false);
   }, [selectedLocation, loading, cropData]);
+
+  // Efecto para mostrar el buffer GeoJSON
+  useEffect(() => {
+    if (!mapInstanceRef.current || !cropData?.buffer_geojson) return;
+
+    // Remover buffer anterior si existe
+    if (bufferRef.current) {
+      mapInstanceRef.current.removeLayer(bufferRef.current);
+    }
+
+    // Crear y agregar el buffer GeoJSON
+    const bufferLayer = L.geoJSON(cropData.buffer_geojson, {
+      style: {
+        color: '#2c5530',
+        weight: 2,
+        opacity: 0.8,
+        fillColor: '#2c5530',
+        fillOpacity: 0.1
+      }
+    });
+
+    // Agregar popup al buffer
+    bufferLayer.bindPopup(`
+      <div style="text-align: center;">
+        <h4>🗺️ Área de Análisis</h4>
+        <p><strong>Radio:</strong> ${cropData.buffer_geojson.properties?.radius_km || 'N/A'} km</p>
+        <p><strong>Centro:</strong> ${cropData.buffer_geojson.properties?.center?.lat?.toFixed(4) || 'N/A'}°, ${cropData.buffer_geojson.properties?.center?.lon?.toFixed(4) || 'N/A'}°</p>
+        <p><em>${cropData.buffer_geojson.properties?.description || 'Buffer de análisis'}</em></p>
+      </div>
+    `);
+
+    bufferLayer.addTo(mapInstanceRef.current);
+    bufferRef.current = bufferLayer;
+
+    // Limpiar buffer cuando se cambie de ubicación
+    return () => {
+      if (bufferRef.current) {
+        mapInstanceRef.current.removeLayer(bufferRef.current);
+        bufferRef.current = null;
+      }
+    };
+  }, [cropData?.buffer_geojson]);
 
   return (
     <div className="map-component">
